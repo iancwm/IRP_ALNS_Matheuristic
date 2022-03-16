@@ -27,7 +27,7 @@ from alns import ALNS, State
 
 
 class Parser(object):
-    ### TODO - CREATE PARSER
+    
     def __init__(self, dat_file):
         '''initialize the parser
         Args:
@@ -59,27 +59,6 @@ class Parser(object):
                 self.customers.append(Customer(int(self.datContent[i][0]), 1, float(self.datContent[i][1]), float(self.datContent[i][2]), 
                                                int(self.datContent[i][3]), float(self.datContent[i][7]), int(self.datContent[i][6]),
                                                int(self.datContent[i][4]), int(self.datContent[i][5])))
-
-
-        # Args:
-        #     id::int
-        #         id of the node
-        #     type::int
-        #         0 for depot, 1 for customer
-        #     x::float
-        #         x coordinate of the node
-        #     y::float
-        #         y coordinate of the node
-        #     i::int
-        #         Starting inventory level
-        #     h::float
-        #         Inventory cost
-        #     r::int
-        #         Daily production/(cost)
-        #     u::int
-        #         Maximum inventory level
-        #     l::int
-        #         Minimum inventory level
 
     def set_vehicles(self):
         # Initialize Vehicle
@@ -165,6 +144,43 @@ class Depot(Node):
         '''
         super(Depot, self).__init__(id, type, x, y, i, h, r)
         
+        # Initialize current inventory level
+        self.current_inventory=i
+        
+        # Keep track of inventory costs
+        self.inventory_cost=0
+        
+    def load(self,vehicle:Vehicle,load_policy:str='max',exact_load:float=None):
+        '''Load a vehicle
+        Args:
+            vehicle::Vehicle
+                Vehicle to load inventory
+            load_policy::str ('max','exact','none')
+                Determines how much to load
+            exact_load::float
+                If load_policy is 'exact', load the vechicle with this amount.            
+        '''
+        
+        if load_policy=='max':
+            inventory_loaded=min(self.current_inventory,vehicle.Q)
+        elif load_policy=='exact':
+            inventory_loaded=exact_load
+        elif load_policy=='none':
+            inventory_loaded=None
+        
+        vehicle.current_inventory+=inventory_loaded
+        self.current_inventory-=inventory_loaded
+    
+    def accrue_cost(self):
+        ''' Calculate cost for the period
+        '''
+        self.inventory_cost+=self.current_inventory*self.h
+    
+    def produce(self):
+        ''' Produce inventory for the period
+        '''
+        self.current_inventory+=self.r
+        
         
 ### Customer class ###
 # You should not change this class!
@@ -200,9 +216,16 @@ class Customer(Node):
         
         # Inventory cost used in calculating objective function
         self.inventory_cost=0
+        self.current_inventory=self.i
 
     def __str__(self):
         return 'Node id: {}, type: {}, x: {}, y: {}, service_time: {}'.format(self.id, self.type, self.x, self.y, self.service_time)
+    
+    def accrue_cost(self):
+        self.inventory_cost+=self.current_inventory*self.h
+        
+    def consume(self):
+        self.current_inventory-=self.r
 
 ### Vehicle class ###
 # Vehicle class. You could add your own helper functions freely to the class, and not required to use the functions defined
@@ -221,14 +244,19 @@ class Vehicle(object):
             end_node::Node
                 ending node of the vehicle
             Q::float
-                Vehicle capacity
-            
+                Vehicle capacity            
         '''
         self.id = id
         self.start_node = start_node
         self.end_node = end_node        
         self.Q = Q
+        
+        # To keep track of current node
+        self.current_node= start_node
 
+        # To keep track of inventory
+        self.current_inventory=0
+        
         # travel time of the vehicle
         self.travel_cost = 0
         
@@ -241,7 +269,43 @@ class Vehicle(object):
         '''
         if len(self.node_visited) > 1:
             return self.node_visited[-1] == self.end_node
-
+    
+    def move(self,node_start:Node,node_end:Node):
+        ''' Move the vehicle to next node, and deliver if customer
+        Args:            
+            node_start::Node
+                Node to move from
+            node_end::Node
+                Node to move to
+            
+        '''
+        
+        self.travel_cost+=cdist([(node_start.x,node_start.y)],[(node_end.x,node_end.y]))
+        self.current_node=node_end
+        self.node_visited.append(node_end)
+            
+    def unload(self,node:Customer,unload_policy:str,exact_unload:float=None):        
+        '''Unloads inventory from vehicle to node
+        Args:
+            node::Customer
+                The node to unload at
+            unload_policy::str ('max','exact')
+                Determines how to unload inventory.
+            exact_unload::float
+                Inventory to unload under 'exact' policy
+        '''
+        if unload_policy=='max':
+            inventory_unloaded = min(node.u - node.current_inventory,self.current_inventory)
+                        
+        elif unload_policy=='exact':
+            inventory_unloaded=exact_unload
+                            
+        elif unload_policy=='none':
+            inventory_unloaded=0                
+        
+        node.current_inventory+=inventory_unloaded
+        self.current_inventory-=inventory_unloaded
+        
     def __str__(self):
         return 'Vehicle id: {}, start_node: {}, end_node: {}, max_travel_time: {}, speed_factor: {}, consumption_rate: {}, battery_capacity: {}'\
             .format(self.id, self.start_node, self.end_node, self.max_travel_time, self.speed_factor, self.consumption_rate, self.battery_capacity)
@@ -253,7 +317,7 @@ class Vehicle(object):
 
 class IVRP(State):
 
-    def __init__(self, name, depot: Depot, customers: List[Customer], vehicles: List[Vehicle], destruction: float = 0.25):
+    def __init__(self, name, depot: Depot, customers: List[Customer], vehicles: List[Vehicle], nPeriods:int, destruction: float = 0.25):
         '''Initialize the EVRP state
         Args:
             name::str
@@ -262,8 +326,10 @@ class IVRP(State):
                 depot of the instance
             customers::[Customer]
                 customers of the instance            
-            vehicle::Vehicle
-                vehicle of the instance
+            vehicles::[Vehicle]   
+                Vehicles of the instance
+            nPeriods::int
+                Number of periods to simulate
             destruction::Float
                 Degree of destruction to be passed onto destroy operators where appropriate
         '''
@@ -272,6 +338,8 @@ class IVRP(State):
         self.customers = customers        
         # record the vehicle used
         self.vehicles = vehicles
+        # record numer of periods
+        self.nPeriods = nPeriods
         # record the visited customers, eg. [Customer1, Customer2]
         self.customer_visited = []
         # record the unvisited customers, eg. [Customer9, Customer10]
@@ -319,12 +387,18 @@ class IVRP(State):
         Vehicle.node_visited
         
         '''
-        # You should implement your own method to construct the route of EVRP from any tour visiting all the customers     
-        
-        
+        # You should implement your own method to construct the route of EVRP from any tour visiting all the customers
+    
+    def advance_time(self):        
+        # Consume and then accrue costs
+        for customer in self.customers:
+            customer.consume()
+            customer.accrue_cost()
+        # Produce inventory at depot
+        self.depot.produce()
         
     def objective(self):
         ''' Calculate the objective value of the state
         Return the total travel time and charging time of all vehicles used
         '''        
-        return sum([v.travel_cost for v in self.vehicles]) + sum([c.inventory_cost for c in self.customers])
+        return sum([v.travel_cost for v in self.vehicles]) + sum([c.inventory_cost for c in self.customers] + self.depot.inventory_cost)

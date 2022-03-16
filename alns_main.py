@@ -168,7 +168,7 @@ if __name__ == '__main__':
     # load data and random seed
     parsed = Parser(dat_file)
     
-    ivrp = IVRP(parsed.name, parsed.depot, parsed.customers, parsed.vehicles)
+    ivrp = IVRP(name=parsed.name, depot=parsed.depot, customers=parsed.customers,vehicles=parsed.vehicles,nPeriods=parsed.nPeriods)
     
     #TODO: Enyong/Sean code
     
