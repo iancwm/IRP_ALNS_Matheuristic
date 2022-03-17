@@ -149,8 +149,8 @@ class Depot(Node):
         
         # Keep track of inventory costs
         self.inventory_cost=0
-        
-    def load(self,vehicle:Vehicle,load_policy:str='max',exact_load:float=None):
+    
+    def load(self,vehicle,load_policy:str='max',exact_load:float=None):
         '''Load a vehicle
         Args:
             vehicle::Vehicle
@@ -170,6 +170,7 @@ class Depot(Node):
         
         vehicle.current_inventory+=inventory_loaded
         self.current_inventory-=inventory_loaded
+        
     
     def accrue_cost(self):
         ''' Calculate cost for the period
@@ -280,7 +281,7 @@ class Vehicle(object):
             
         '''
         
-        self.travel_cost+=cdist([(node_start.x,node_start.y)],[(node_end.x,node_end.y]))
+        self.travel_cost+=cdist([(node_start.x,node_start.y)],[(node_end.x,node_end.y)])
         self.current_node=node_end
         self.node_visited.append(node_end)
             
@@ -374,14 +375,12 @@ class IVRP(State):
         Args:
             tour::[Customer]
                 a tour (list of Nodes) visiting all the customers        
-
         # You should update the following variables for the EVRP
         EVRP.vehicles
         EVRP.travel_time
         EVRP.customer_visited
         EVRP.customer_unvisited
         EVRP.route
-
         # You should update the following variables for each vehicle used
         Vehicle.travel_cost
         Vehicle.node_visited
