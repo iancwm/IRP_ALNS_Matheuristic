@@ -34,7 +34,7 @@ class Parser(object):
             dat_file::str
                 the path to the .dat file
         '''
-        self.name = os.path.splitext(dat_file)[0]
+        self.name = os.path.split(dat_file)[1]
         
         self.datContent = [i.strip().split() for i in open(dat_file).readlines()]
         
@@ -218,15 +218,21 @@ class Customer(Node):
         # Inventory cost used in calculating objective function
         self.inventory_cost=0
         self.current_inventory=self.i
+        self.no_delivery=0
 
-    def __str__(self):
-        return 'Node id: {}, type: {}, x: {}, y: {}, service_time: {}'.format(self.id, self.type, self.x, self.y, self.service_time)
-    
     def accrue_cost(self):
         self.inventory_cost+=self.current_inventory*self.h
         
     def consume(self):
+        assert self.current_inventory - self.r >=0, f"Customer {self.id} stock out!"
         self.current_inventory-=self.r
+
+    def check_capacity(self,inventory_delivered:float):
+        return self.current_inventory + inventory_delivered <= self.u
+
+    def __str__(self):
+        return 'Node id: {}, type: {}, x: {}, y: {}, i: {}, h: {}, r: {}, u: {}, l: {}'.format(self.id, self.type, self.x, self.y, self.i, self.h,self.r,self.u,self.l)
+    
 
 ### Vehicle class ###
 # Vehicle class. You could add your own helper functions freely to the class, and not required to use the functions defined
@@ -304,15 +310,19 @@ class Vehicle(object):
         elif unload_policy=='none':
             inventory_unloaded=0                
         
+        assert node.check_capacity(inventory_unloaded), f"Customer {node.id} over capacity!"
+        assert node.no_delivery==0, f"Customer {node.id} already received delivery this cycle!"
+
+        node.no_delivery+=1
         node.current_inventory+=inventory_unloaded
         self.current_inventory-=inventory_unloaded
         
     def __str__(self):
-        return 'Vehicle id: {}, start_node: {}, end_node: {}, max_travel_time: {}, speed_factor: {}, consumption_rate: {}, battery_capacity: {}'\
-            .format(self.id, self.start_node, self.end_node, self.max_travel_time, self.speed_factor, self.consumption_rate, self.battery_capacity)
+        return 'Vehicle id: {}, start_node: {}, end_node: {}, Q:{}, current_inventory: {}, travel_cost: {}'\
+            .format(self.id, self.start_node, self.end_node, self.Q, self.current_inventory, self.travel_cost)
 
-### EVRP state class ###
-# EVRP state class. You could and should add your own helper functions to the class
+### IVRP state class ###
+# IVRP state class. You could and should add your own helper functions to the class
 # But please keep the rest untouched!
 
 
@@ -387,12 +397,13 @@ class IVRP(State):
         
         '''
         # You should implement your own method to construct the route of EVRP from any tour visiting all the customers
-    
+
     def advance_time(self):        
         # Consume and then accrue costs
         for customer in self.customers:
             customer.consume()
             customer.accrue_cost()
+            customer.no_delivery=0
         # Produce inventory at depot
         self.depot.produce()
         
@@ -400,4 +411,4 @@ class IVRP(State):
         ''' Calculate the objective value of the state
         Return the total travel time and charging time of all vehicles used
         '''        
-        return sum([v.travel_cost for v in self.vehicles]) + sum([c.inventory_cost for c in self.customers] + self.depot.inventory_cost)
+        return sum([v.travel_cost for v in self.vehicles]) + sum([c.inventory_cost for c in self.customers]) + self.depot.inventory_cost
