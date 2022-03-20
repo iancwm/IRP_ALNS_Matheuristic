@@ -3,7 +3,7 @@ Description: IVRP State
 Author: Group 5
 Date: 2022-03-15
 LastEditors: Ian Chong
-LastEditTime: 2022-03-15
+LastEditTime: 2022-03-20 23:45
 '''
 
 import copy
@@ -23,9 +23,6 @@ sys.path.append('./ALNS')
 from alns import ALNS, State
 
 ### Parser to parse instance xml file ###
-# You should not change this class!
-
-
 class Parser(object):
     
     def __init__(self, dat_file):
@@ -67,9 +64,6 @@ class Parser(object):
         
 
 ### Node class ###
-# You should not change this class!
-
-
 class Node(object):
 
     def __init__(self, id:int, type:int, x:float, y:float, i:float, h:float, r:float):
@@ -88,7 +82,7 @@ class Node(object):
             h::float
                 inventory cost
             r::float
-                Daily production/(consumption)
+                Daily production/consumption
         '''
         self.id = id
         self.type = type
@@ -120,8 +114,8 @@ class Node(object):
     def __str__(self):
         return 'Node id: {}, type: {}, x: {}, y: {}'.format(self.id, self.type, self.x, self.y)
 
+    
 ### Depot class ###
-
 class Depot(Node):
 
     def __init__(self, id:int, type:int, x:float, y:float, i:int, h:float, r:int):
@@ -140,7 +134,7 @@ class Depot(Node):
             h::float
                 inventory cost
             r::int
-                Daily production/(cost)
+                Daily production
         '''
         super(Depot, self).__init__(id, type, x, y, i, h, r)
         
@@ -181,12 +175,11 @@ class Depot(Node):
         ''' Produce inventory for the period
         '''
         self.current_inventory+=self.r
-        
+
+    def __str__(self):
+        return 'Node id: {}, type: {}, x: {}, y: {}, i: {}, h: {}, r: {}.format(self.id, self.type, self.x, self.y, self.i, self.h, self.r)
         
 ### Customer class ###
-# You should not change this class!
-
-
 class Customer(Node):
 
     def __init__(self, id:int, type:int, x:float, y:float, i:int, h:float, r:int, u:int, l:int):
@@ -205,7 +198,7 @@ class Customer(Node):
             h::float
                 Inventory cost
             r::int
-                Daily production/(cost)
+                Daily #production/(cost)
             u::int
                 Maximum inventory level
             l::int
@@ -235,10 +228,6 @@ class Customer(Node):
     
 
 ### Vehicle class ###
-# Vehicle class. You could add your own helper functions freely to the class, and not required to use the functions defined
-# But please keep the rest untouched!
-
-
 class Vehicle(object):
 
     def __init__(self, id:int, start_node:Node, end_node:Node, Q:float):
@@ -267,7 +256,7 @@ class Vehicle(object):
         # travel time of the vehicle
         self.travel_cost = 0
         
-        # all the nodes including depot, customers, or charging stations (if any) visited by the vehicle
+        # all the nodes including depot & customers
         self.node_visited = [self.start_node]  # start from depot
 
     def check_return(self):
@@ -322,10 +311,6 @@ class Vehicle(object):
             .format(self.id, self.start_node, self.end_node, self.Q, self.current_inventory, self.travel_cost)
 
 ### IVRP state class ###
-# IVRP state class. You could and should add your own helper functions to the class
-# But please keep the rest untouched!
-
-
 class IVRP(State):
 
     def __init__(self, name, depot: Depot, customers: List[Customer], vehicles: List[Vehicle], nPeriods:int, destruction: float = 0.25):
@@ -386,17 +371,17 @@ class IVRP(State):
             tour::[Customer]
                 a tour (list of Nodes) visiting all the customers        
         # You should update the following variables for the EVRP
-        EVRP.vehicles
-        EVRP.travel_time
-        EVRP.customer_visited
-        EVRP.customer_unvisited
-        EVRP.route
+        IVRP.vehicles
+        IVRP.travel_time
+        IVRP.customer_visited
+        IVRP.customer_unvisited
+        IVRP.route
         # You should update the following variables for each vehicle used
         Vehicle.travel_cost
         Vehicle.node_visited
         
         '''
-        # You should implement your own method to construct the route of EVRP from any tour visiting all the customers
+        ###
 
     def advance_time(self):        
         # Consume and then accrue costs
