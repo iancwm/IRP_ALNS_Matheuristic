@@ -7,13 +7,14 @@ LastEditTime: 2022-02-24 19:43:57
 '''
 
 import argparse
+from dataclasses import replace
 import numpy as np
 import numpy.random as rnd
 import networkx as nx
 import matplotlib.pyplot as plt
 import os
 
-from ivrp import *
+from ivrp_irpml import *
 from pathlib import Path
 
 import sys
@@ -122,7 +123,7 @@ def generate_output(YourName, evrp, suffix):
 
 ### Destroy operators ###
 # You can follow the example and implement destroy_2, destroy_3, etc
-def random_destroy(current, random_state):
+def random_destroy(current:IVRP, random_state):
     '''
     This movement randomly selects one period and removes one customer
     from it. It is repeated p times. This movement is useful for refining the
@@ -139,25 +140,54 @@ def random_destroy(current, random_state):
             the evrp object after destroying
     '''
     destroyed = current.copy()
-    len(destroyed.cust_assignment)
-    ...
+    p = int(destroyed.destruction*destroyed.nPeriods)
+    
+    for times in range(p):
+        if len(destroyed.cust_assignment)>0:            
+            r = random_state.choice(destroyed.cust_assignment,1,replace=False)
+            idx_1 = destroyed.cust_assignment.index(r)
+            if len(r)>0:
+                i = random_state.choice(r,1,replace=False)
+                idx_2 = destroyed.cust_assignment[idx_1].index(i)
+                del destroyed.cust_assignment[idx_1][idx_2]
+    
     return destroyed
+
 
 ### Repair operators ###
 # You can follow the example and implement repair_2, repair_3, etc
-def repair_1(destroyed, random_state):
-    ''' repair operator sample (name of the function is free to change)
+def random_insert(destroyed:IVRP, random_state):
+    ''' This movement randomly inserts p customers into the current solution.
+    Speciﬁcally, it selects one random customer and one random period, and
+    inserts the customer into the route of that period if the customer is not
+    yet routed. This movement is repeated p times.)
     Args:
-        destroyed::EVRP
-            an EVRP object after destroying
+        destroyed::IVRP
+            an IVRP object after destroying
         random_state::numpy.random.RandomState
             a random state specified by the random seed
     Returns:
-        repaired::EVRP
+        repaired::IVRP
             the evrp object after repairing
     '''
-    # You should code here
-    ...
+    repaired = destroyed.copy()
+    p = int(repaired.destruction*repaired.nPeriods)
+    
+    # get unselected customers
+    
+    unselected=[]
+    
+    for i in repaired.cust_assignment:
+        for j in i:
+            if j not in repaired.customers:
+                unselected.append(j)
+    
+    for times in range(p):
+        cust_to_insert = random_state.choice(unselected,1,replace=False)        
+        period_to_insert = random_state.choice(repaired.cust_assignment,1,replace=False)
+        idx = repaired.cust_assignment.index(period_to_insert)
+        repaired.cust_assignment[idx].append(cust_to_insert)
+        
     return repaired
 
 if __name__ == '__main__':
