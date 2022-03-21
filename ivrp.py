@@ -177,7 +177,7 @@ class Depot(Node):
         self.current_inventory+=self.r
 
     def __str__(self):
-        return 'Node id: {}, type: {}, x: {}, y: {}, i: {}, h: {}, r: {}.format(self.id, self.type, self.x, self.y, self.i, self.h, self.r)
+        return 'Node id: {}, type: {}, x: {}, y: {}, i: {}, h: {}, r: {}.format(self.id, self.type, self.x, self.y, self.i, self.h, self.r)'
         
 ### Customer class ###
 class Customer(Node):
