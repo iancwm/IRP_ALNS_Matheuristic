@@ -499,14 +499,16 @@ class IVRP(State):
                                                    lb=[0 for c in self.customers for t in range(self.nPeriods)],
                                                    ub=[c.u for c in self.customers for t in range(self.nPeriods)],
                                                    name='customer_shipped')
-        total_shipped = []
-        for t in range(self.nPeriods):
-            total_shipped[t] = m.sum((total_shipped_cust[c.id, t] for c in self.customers))
+        # total_shipped = []
+        # for t in range(self.nPeriods):
+        #     total_shipped[t] = m.sum((total_shipped_cust[c.id, t] for c in self.customers))
         v_cust_load_initial = m.continuous_var_dict([(v.id, c.id, t)
                                                      for v in self.vehicles
                                                      for c in self.customers
                                                      for t in range(self.Periods)],
                                                     name="v_cust_load_initial")
+
+        # Use cust assignment
 
         # Objective Function
         # (1)
@@ -531,14 +533,18 @@ class IVRP(State):
 
         # (2)
         m.add_constraints(
-            depot_inventory[0, t] == m.sum((depot_inventory[0, t - 1] + self.depot.r) - total_shipped[t - 1])
-            for t in range(self.nPeriods))
+            depot_inventory[0, t] == m.sum(depot_inventory[0, t - 1] +
+                                           self.depot.r -
+                                           m.sum(total_shipped_cust[c.id, t - 1] for c in self.customers)
+                                           )
+            for t in range(self.nPeriods)
+        )
 
         # These constraints impose that the supplier's inventory cannot be less than
         # the total amount of product delivered in period t
 
         # (3)
-        m.add_constraints(depot_inventory[0, t] >= total_shipped[t]
+        m.add_constraints(depot_inventory[0, t] >= m.sum(total_shipped_cust[c.id, t - 1] for c in self.customers)
                           for t in range(self.nPeriods))
 
         # Likewise, the inventory level at each retailer in period t is given by its
@@ -605,12 +611,12 @@ class IVRP(State):
         # (11) Flow conservation constraints: these constraints impose that the
         # number of arcs entering and leaving a vertex should be the same:
         m.add_constraints(
-            m.sum(leg[c1.id, c2.id, t] for c1 in self.customers) == m.sum(leg[c2.id, c1.id, t] for c1 in self.customers)
-            for c2 in self.customers for t in range(self.nPeriods)
+            m.sum(leg[c1.id, c2.id, t] for c1 in self.nodes) == m.sum(leg[c2.id, c1.id, t] for c1 in self.nodes)
+            for c2 in self.nodes for t in range(self.nPeriods)
         )
 
         # (12) A single vehicle is available:
-        m.add_constraints(m.sum(leg[c1.id, 0, t] for c1 in self.customers) <= 1
+        m.add_constraints(m.sum(leg[c1.id, 0, t] for c1 in self.nodes) <= 1
                           for t in range(self.nPeriods)
                           )
 
@@ -622,7 +628,7 @@ class IVRP(State):
                           for c2 in self.customers
                           for t in range(self.nPeriods)
                           for v in self.vehicles
-        )
+                          )
         # (14) Subtour elimination constraints cont..:
         m.add_constraints(total_shipped_cust[c.id, t] <= v_cust_load_initial(v.id, c.id, t)
                           for c in self.customers
@@ -646,8 +652,7 @@ class IVRP(State):
 
         """(addressed by leg binary_var_dict)"""
 
-        self.sol = m.solve(log_output = True)
-
+        self.sol = m.solve(log_output=True)
 
     def advance_time(self):
         # Consume and then accrue costs
