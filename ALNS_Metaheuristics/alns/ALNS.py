@@ -50,6 +50,7 @@ class ALNS:
 
         self._destroy_operators = OrderedDict()
         self._repair_operators = OrderedDict()
+        self._solution_improvement = OrderedDict()
         self._callbacks = {}
 
         self._rnd_state = rnd_state
@@ -79,6 +80,19 @@ class ALNS:
             one in which they were passed to the ALNS instance.
         """
         return list(self._repair_operators.items())
+
+    @property
+    def solution_improvement(self):
+        """
+        Returns the solution improvement operators set for the ALNS algorithm.
+
+        Returns
+        -------
+        list
+            A list of (name, operator) tuples. Their order is the same as the
+            one in which they were passed to the ALNS instance.
+        """
+        return list(self._solution_improvement.items())
 
     def add_destroy_operator(self, operator, name=None):
         """
@@ -112,7 +126,23 @@ class ALNS:
         """
         self._add_operator(self._repair_operators, operator, name)
 
-    def iterate(self, initial_solution, weights, operator_decay, criterion,
+    def add_solution_improvement(self, operator, name=None):
+        """
+        Adds a repair operator to the heuristic instance.
+
+        Parameters
+        ----------
+        operator : Callable[[State, RandomState], State]
+            An operator that, when applied to the destroyed state, returns a
+            new state reflecting its implemented repair action. The second
+            argument is the random state constructed from the passed-in seed.
+        name : str
+            Optional name argument, naming the operator. When not passed, the
+            function name is used instead.
+        """
+        self._add_operator(self._solution_improvement, operator, name)
+
+    def iterate(self, initial_solution, weights, operator_decay, criterion, theta,
                 iterations=10000, collect_stats=True):
         """
         Runs the adaptive large neighbourhood search heuristic [1], using the
@@ -201,6 +231,10 @@ class ALNS:
 
             r_weights[r_idx] *= operator_decay
             r_weights[r_idx] += (1 - operator_decay) * weights[weight_idx]
+
+            if iteration % theta == 0:
+                si_operator = self.solution_improvement[0][1]
+                current = si_operator(current)
 
             if collect_stats:
                 statistics.collect_objective(current.objective())
