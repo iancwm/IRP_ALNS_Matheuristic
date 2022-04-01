@@ -355,6 +355,9 @@ class IVRP(State):
         self.inventory_cost = 0
         # saving of quantities solution
         self.DeliverQuantities_solution = None
+        # y visited
+        self.y_visited = []
+
 
     def random_initialize(self, seed=None):
         ''' Randomly initialize the state with split_route() (your construction heuristic)
@@ -417,6 +420,7 @@ class IVRP(State):
                     if customer_ids.index(self.customer_visited[t_period-1][t_veh][node].id) != 0:
                         y[(customer_ids.index(self.customer_visited[t_period-1][t_veh][node].id), 
                            t_veh, t_period)] = 1
+        self.y_visited = y
         self.travel_distance = travelled_distance
         return x, y
 
