@@ -6,6 +6,16 @@ This group project follows the conventions and rules of the 12th DIMACS Implemen
 
 ----
 
+# Instructions to run code
+
+Execution code are all in respective `.ipynb` files
+
+- Exact Method: `ivrp_mp.ipynb`
+- Heuristic Approach: `ivrp_heuristic.ipynb`
+- Matheuristic Approach: `ivrp_matheuristic.ipynb`
+
+----
+
 # Problem Statement
 
 ## Description
