@@ -122,11 +122,16 @@ def generate_output(YourName, evrp, suffix):
 
 ### Destroy operators ###
 # You can follow the example and implement destroy_2, destroy_3, etc
-def destroy_1(current, random_state):
-    ''' Destroy operator sample (name of the function is free to change)
+def random_destroy(current, random_state):
+    '''
+    This movement randomly selects one period and removes one customer
+    from it. It is repeated p times. This movement is useful for refining the
+    solution, since it does not change it much when p is small (which happens
+    frequently), but still yields a major transformation when p is large.
     Args:
-        current::EVRP
-            an EVRP object before destroying
+        current::IVRP
+            an IVRP object before destroying
+            contains IVRP.destruction attribute
         random_state::numpy.random.RandomState
             a random state specified by the random seed
     Returns:
@@ -134,7 +139,7 @@ def destroy_1(current, random_state):
             the evrp object after destroying
     '''
     destroyed = current.copy()
-    # You should code here
+    len(destroyed.cust_assignment)
     ...
     return destroyed
 
@@ -169,7 +174,7 @@ if __name__ == '__main__':
     parsed = Parser(dat_file)
     
     ivrp = IVRP(name=parsed.name, depot=parsed.depot, customers=parsed.customers,vehicles=parsed.vehicles,nPeriods=parsed.nPeriods)
-    
+
     #TODO: Enyong/Sean code
     
 #     # construct random initialized solution
