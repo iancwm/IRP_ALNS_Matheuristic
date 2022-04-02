@@ -11,8 +11,10 @@ This group project follows the conventions and rules of the 12th DIMACS Implemen
 Execution code are all in respective `.ipynb` files
 
 - Exact Method: `ivrp_mp.ipynb`
-- Heuristic Approach: `ivrp_heuristic.ipynb`
+- Metaheuristic Approach: `ivrp_metaheuristic.ipynb`
 - Matheuristic Approach: `ivrp_matheuristic.ipynb`
+
+Only the Exact Method iterates through the whole folder. The Metaheuristic and Matheuristic Approaches are single instance.
 
 ----
 
