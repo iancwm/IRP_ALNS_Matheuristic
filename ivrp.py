@@ -45,12 +45,12 @@ class Parser(object):
         self.set_vehicles()
     
     def set_depot(self):
-        ''' initialize the depot (Line 1 in .dat file) '''
+        '''initialize the depot (Line 1 in .dat file)'''
         self.depot = Depot(int(self.datContent[1][0]), 0, float(self.datContent[1][1]), float(self.datContent[1][2]), 
                            int(self.datContent[1][3]), float(self.datContent[1][5]), int(self.datContent[1][4]))
     
     def set_customers(self):
-        ''' initialize the customers (Line 2 onwards in .dat file) '''
+        '''initialize the customers (Line 2 onwards in .dat file)'''
         for i in range(len(self.datContent)):
             if i > 1:                
                 self.customers.append(Customer(int(self.datContent[i][0]), 1, float(self.datContent[i][1]), float(self.datContent[i][2]), 
@@ -58,7 +58,7 @@ class Parser(object):
                                                int(self.datContent[i][4]), int(self.datContent[i][5])))
 
     def set_vehicles(self):
-        ''' initialize the vehicle (Line 0 in .dat file) '''
+        '''initialize the vehicle (Line 0 in .dat file)'''
         for i in range(int(self.datContent[0][3])):
             self.vehicles.append(Vehicle(i, self.depot, self.depot, int(self.datContent[0][2])))
         
