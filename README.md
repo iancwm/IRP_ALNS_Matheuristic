@@ -1,4 +1,4 @@
-# CS606 AI Planning Group Project - Inventory Vehicle Routing Problem
+# ALNS and Matheuristic Approaches for Inventory Vehicle Routing Problem
 
 The Inventory Routing Problem (IRP) is one of the most challenging of the VRP variants, as it combines both inventory management and routing decisions into a single problem.
 
