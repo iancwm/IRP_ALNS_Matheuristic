@@ -2,7 +2,7 @@
 
 The Inventory Routing Problem (IRP) is one of the most challenging of the VRP variants, as it combines both inventory management and routing decisions into a single problem.
 
-This group project follows the conventions and rules of the 12th DIMACS Implementation Challenge.
+This group project follows the conventions and rules of the **12th DIMACS Implementation Challenge**.
 
 ----
 
